@@ -9,9 +9,12 @@ class ControllerBase
   attr_reader :req, :res, :params
 
   # Setup the controller
-  def initialize(req, res)
+  def initialize(req, res, route_params = {})
     @req = req
     @res = res
+
+    @params = req.params.merge(route_params)
+
     @already_built_response = false
   end
 
@@ -28,7 +31,7 @@ class ControllerBase
       self.res["Location"] = url
       self.res.status = 302
       @already_built_response = true
-      @session.store_session
+      self.session.store_session(self.res)
     end
   end
 
@@ -43,7 +46,7 @@ class ControllerBase
       self.res.write(content)
 
       @already_built_response = true
-      @session.store_session
+      self.session.store_session(self.res)
     end
   end
 
@@ -59,10 +62,13 @@ class ControllerBase
 
   # method exposing a `Session` object
   def session
-    @session ||= Session.new(self.res)
+    # debugger
+    @session ||= Session.new(self.req)
   end
 
   # use this with the router to call action_name (:index, :show, :create...)
   def invoke_action(name)
+    self.send(name)
+    render(name) unless self.already_built_response?
   end
 end
