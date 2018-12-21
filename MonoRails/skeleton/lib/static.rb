@@ -4,11 +4,12 @@ class Static
   attr_reader :app
 
   MIME_TYPES = {
-    .txt: "text/plain",
-    .jpg: "image/jpeg",
-    .png: "image/png",
-    .zip: "application/zip"}
-    
+    ".txt": "text/plain",
+    ".jpg": "image/jpeg",
+    ".png": "image/png",
+    ".zip": "application/zip"
+  }
+
   def initialize(app)
     @app = app
   end
@@ -17,9 +18,8 @@ class Static
     req = Rack::Request.new(env)
     res = Rack::Response.new
     path = req.path
-
     if find_file(path)
-      show_file(path)
+      serve_file(path, res)
       res
     else
       @app.call(env)
@@ -29,19 +29,20 @@ class Static
   def find_file(path)
     path.include?("/public")
   end
-end
 
-class FileServer
-
-  def call(env)
-
-  end
-
-  def find_file(file_name, res)
-    extension = file_name.split(".")[1]
-    mime = MIME_TYPE[extension]
-    file = File.read(file_name)
-    res["Content-type"] = content_type
-    res.write(file)
+  def serve_file(path, res)
+    file_name = File.join(File.dirname(__FILE__), "..", path)
+    # debugger
+    if File.exist?(file_name)
+      # debugger
+      extension = file_name.split(".").last
+      mime = MIME_TYPES[extension]
+      file = File.read(file_name)
+      res["Content-type"] = mime
+      res.write(file)
+    else
+      res.status = 404
+      res.write("File not found")
+    end
   end
 end
